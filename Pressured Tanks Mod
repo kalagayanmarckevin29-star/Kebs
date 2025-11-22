@@ -1,0 +1,64 @@
+const extendContent = global.extendContent;
+
+// Define the Pressure Tank block
+const PressureTank = extendContent(Block, "pressure-tank", {
+    buildConfiguration(tile, table) {
+        const e = tile.ent();
+        if(!e) return;
+
+        table.add("Pressure: " + ((e.pressure || 0).toFixed(2))).row();
+        table.add("Inflow: " + ((e.inflow || 0).toFixed(2))).row();
+        table.add("Outflow: " + ((e.outflow || 0).toFixed(2))).row();
+        table.add(e.danger ? "⚠️ OVERPRESSURE" : "Normal").row();
+    },
+
+    update(tile) {
+        this.super$update(tile);
+        const e = tile.ent();
+        if(!e) return;
+
+        const stored = e.liquids.total();
+        const max = this.liquidCapacity;
+
+        // Pressure calculation
+        const pressure = 1 + (stored / max);
+        e.pressure = pressure;
+
+        // Input / Output tracking
+        e.inflow = stored; 
+        let outflow = 0;
+        e.liquids.each((liquid, amount) => {
+            const dumped = e.dumpLiquid(liquid, this.liquidPressure * pressure);
+            outflow += dumped;
+        });
+        e.outflow = outflow;
+
+        // Danger detection
+        e.danger = false;
+        if (pressure >= 1.2) e.danger = true;
+
+        // Explosion logic
+        if (pressure >= 1.5) {
+            Sounds.explosion.at(tile.worldx(), tile.worldy());
+            Effects.shake(5, 5, tile);
+            Damage.damage(tile.worldx(), tile.worldy(), 40, 80);
+            tile.remove(); // safer than tile.block().destroy(tile);
+        }
+    }
+});
+
+// Base block properties
+PressureTank.update = true;
+PressureTank.hasLiquids = true;
+PressureTank.liquidCapacity = 60;
+PressureTank.liquidPressure = 0.15;
+
+// Entity fields
+PressureTank.entityType = prov(() => extend(TileEntity, {
+    pressure: 0,
+    inflow: 0,
+    outflow: 0,
+    danger: false
+}));
+
+print("Pressure Tank Advanced Mod Loaded");
