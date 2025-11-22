@@ -1,0 +1,8 @@
+{
+    "name": "pressure-tank-mod",
+    "displayName": "Pressure Tank Mod",
+    "author": "Kebs",
+    "version": "1.0",
+    "main": "main.js",
+    "description": "Adds a pressure tank that makes outflow depends on the presure, with danger, overpressure, and explosion."
+}
